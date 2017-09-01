@@ -22,6 +22,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.protocol.amqp.broker.ActiveMQProtonRemotingConnection;
 import org.apache.activemq.artemis.protocol.amqp.broker.ProtonProtocolManager;
 import org.apache.activemq.artemis.protocol.amqp.proton.handler.EventHandler;
+import org.apache.activemq.artemis.protocol.amqp.sasl.ClientSASLFactory;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.BaseConnectionLifeCycleListener;
 import org.apache.activemq.artemis.spi.core.remoting.BufferHandler;
@@ -40,15 +41,17 @@ public class ProtonClientConnectionManager implements BaseConnectionLifeCycleLis
    private static final Logger log = Logger.getLogger(ProtonClientConnectionManager.class);
    private final AMQPClientConnectionFactory connectionFactory;
    private final Optional<EventHandler> eventHandler;
+   private final ClientSASLFactory saslClientFactory;
 
-   public ProtonClientConnectionManager(AMQPClientConnectionFactory connectionFactory, Optional<EventHandler> eventHandler) {
+   public ProtonClientConnectionManager(AMQPClientConnectionFactory connectionFactory, Optional<EventHandler> eventHandler, final ClientSASLFactory saslClientFactory) {
       this.connectionFactory = connectionFactory;
       this.eventHandler = eventHandler;
+      this.saslClientFactory = saslClientFactory;
    }
 
    @Override
    public void connectionCreated(ActiveMQComponent component, Connection connection, ProtonProtocolManager protocolManager) {
-      ActiveMQProtonRemotingConnection amqpConnection = connectionFactory.createConnection(protocolManager, connection, eventHandler);
+      ActiveMQProtonRemotingConnection amqpConnection = connectionFactory.createConnection(protocolManager, connection, eventHandler,saslClientFactory);
       connectionMap.put(connection.getID(), amqpConnection);
 
       log.info("Connection " + amqpConnection.getRemoteAddress() + " created");

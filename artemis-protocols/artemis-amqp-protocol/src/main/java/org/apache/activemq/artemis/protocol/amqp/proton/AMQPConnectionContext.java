@@ -34,6 +34,8 @@ import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPExceptio
 import org.apache.activemq.artemis.protocol.amqp.proton.handler.EventHandler;
 import org.apache.activemq.artemis.protocol.amqp.proton.handler.ExtCapability;
 import org.apache.activemq.artemis.protocol.amqp.proton.handler.ProtonHandler;
+import org.apache.activemq.artemis.protocol.amqp.sasl.AnonymousServerSASL;
+import org.apache.activemq.artemis.protocol.amqp.sasl.ClientSASLFactory;
 import org.apache.activemq.artemis.protocol.amqp.sasl.SASLResult;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.utils.ByteUtil;
@@ -67,6 +69,8 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
 
    protected AMQPConnectionCallback connectionCallback;
    private final String containerId;
+   private final boolean isIncomingConnection;
+   private final ClientSASLFactory saslClientFactory;
    private final Map<Symbol, Object> connectionProperties = new HashMap<>();
    private final ScheduledExecutorService scheduledPool;
 
@@ -83,19 +87,26 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
                                 int maxFrameSize,
                                 int channelMax,
                                 boolean useCoreSubscriptionNaming,
-                                ScheduledExecutorService scheduledPool) {
+                                ScheduledExecutorService scheduledPool,
+                                boolean isIncomingConnection,
+                                ClientSASLFactory saslClientFactory) {
 
       this.protocolManager = protocolManager;
       this.connectionCallback = connectionSP;
       this.useCoreSubscriptionNaming = useCoreSubscriptionNaming;
       this.containerId = (containerId != null) ? containerId : UUID.randomUUID().toString();
+      this.isIncomingConnection = isIncomingConnection;
+      this.saslClientFactory = saslClientFactory;
 
       connectionProperties.put(AmqpSupport.PRODUCT, "apache-activemq-artemis");
       connectionProperties.put(AmqpSupport.VERSION, VersionLoader.getVersion().getFullVersion());
 
       this.scheduledPool = scheduledPool;
       connectionCallback.setConnection(this);
-      this.handler = new ProtonHandler(protocolManager.getServer().getExecutorFactory().getExecutor());
+      this.handler = new ProtonHandler(protocolManager.getServer().getExecutorFactory().getExecutor(), true);
+      if (isIncomingConnection && saslClientFactory != null) {
+         handler.createClientSASL();
+      }
       handler.addEventHandler(this);
       Transport transport = handler.getTransport();
       transport.setEmitFlowEventOnSend(false);
@@ -104,6 +115,14 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
       }
       transport.setChannelMax(channelMax);
       transport.setMaxFrameSize(maxFrameSize);
+   }
+
+   public boolean isIncomingConnection() {
+      return isIncomingConnection;
+   }
+
+   public ClientSASLFactory getSaslClientFactory() {
+      return saslClientFactory;
    }
 
    protected AMQPSessionContext newSessionExtension(Session realSession) throws ActiveMQAMQPException {
@@ -329,6 +348,19 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
             handler.close(null);
          }
       }
+   }
+
+   @Override
+   public void onSaslMechanismsOffered(final ProtonHandler handler, final String[] mechanisms) {
+      if (saslClientFactory != null) {
+         handler.setClientMechanism(saslClientFactory.chooseMechanism(mechanisms));
+      }
+   }
+
+   @Override
+   public void onAuthFailed(final ProtonHandler protonHandler, final Connection connection) {
+      connectionCallback.close();
+      handler.close(null);
    }
 
    @Override
