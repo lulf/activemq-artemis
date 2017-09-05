@@ -225,7 +225,7 @@ public class ProtonHandler extends ProtonInitializable {
                try {
                   byte auth = buffer.getByte(4);
                   if (auth == SASL || auth == BARE) {
-                     if(isServer) {
+                     if(!isServer) {
                         dispatchAuth(auth == SASL);
                      }
                      /*
