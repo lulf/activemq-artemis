@@ -33,6 +33,8 @@ public interface EventHandler {
 
    void onAuthFailed(ProtonHandler protonHandler, Connection connection);
 
+   void onAuthSuccess(ProtonHandler protonHandler, Connection connection);
+
    void onSaslMechanismsOffered(ProtonHandler handler, String[] mechanisms);
 
    void onInit(Connection connection) throws Exception;

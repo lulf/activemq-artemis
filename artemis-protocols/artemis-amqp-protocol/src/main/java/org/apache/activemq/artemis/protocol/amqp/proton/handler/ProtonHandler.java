@@ -227,6 +227,8 @@ public class ProtonHandler extends ProtonInitializable {
                   if (auth == SASL || auth == BARE) {
                      if(isServer) {
                         dispatchAuth(auth == SASL);
+                     } else if(auth == BARE && saslClientMechanism == null) {
+                        dispatchAuthSuccess();
                      }
                      /*
                      * there is a chance that if SASL Handshake has been carried out that the capacity may change.
@@ -376,6 +378,7 @@ public class ProtonHandler extends ProtonInitializable {
                         return true;
                      }
                   };
+                  dispatchAuthSuccess();
 
                   sasl = null;
                   break;
@@ -390,6 +393,12 @@ public class ProtonHandler extends ProtonInitializable {
    private void dispatchAuthFailed() {
       for (EventHandler h : handlers) {
          h.onAuthFailed(this, getConnection());
+      }
+   }
+
+   private void dispatchAuthSuccess() {
+      for (EventHandler h : handlers) {
+         h.onAuthSuccess(this, getConnection());
       }
    }
 
@@ -451,7 +460,6 @@ public class ProtonHandler extends ProtonInitializable {
       this.transport.open();
       this.connection.setContainer(containerId);
       this.connection.setProperties(connectionProperties);
-      this.connection.open();
       flush();
    }
 

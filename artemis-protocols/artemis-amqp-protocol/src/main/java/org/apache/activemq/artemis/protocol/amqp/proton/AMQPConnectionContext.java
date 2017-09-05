@@ -364,6 +364,12 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
    }
 
    @Override
+   public void onAuthSuccess(final ProtonHandler protonHandler, final Connection connection) {
+      connection.open();
+      flush();
+   }
+
+   @Override
    public void onTransport(Transport transport) {
       handler.flushBytes();
    }
