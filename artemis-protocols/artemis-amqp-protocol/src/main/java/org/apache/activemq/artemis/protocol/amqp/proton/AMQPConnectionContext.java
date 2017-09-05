@@ -103,7 +103,7 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
 
       this.scheduledPool = scheduledPool;
       connectionCallback.setConnection(this);
-      this.handler = new ProtonHandler(protocolManager.getServer().getExecutorFactory().getExecutor(), true);
+      this.handler = new ProtonHandler(protocolManager.getServer().getExecutorFactory().getExecutor(), isIncomingConnection);
       if (isIncomingConnection && saslClientFactory != null) {
          handler.createClientSASL();
       }
