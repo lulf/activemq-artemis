@@ -104,9 +104,7 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
       this.scheduledPool = scheduledPool;
       connectionCallback.setConnection(this);
       this.handler = new ProtonHandler(protocolManager.getServer().getExecutorFactory().getExecutor(), isIncomingConnection);
-      if (isIncomingConnection && saslClientFactory != null) {
-         handler.createClientSASL();
-      }
+
       handler.addEventHandler(this);
       Transport transport = handler.getTransport();
       transport.setEmitFlowEventOnSend(false);
@@ -115,6 +113,10 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
       }
       transport.setChannelMax(channelMax);
       transport.setMaxFrameSize(maxFrameSize);
+
+      if (!isIncomingConnection && saslClientFactory != null) {
+         handler.createClientSASL();
+      }
    }
 
    public boolean isIncomingConnection() {
