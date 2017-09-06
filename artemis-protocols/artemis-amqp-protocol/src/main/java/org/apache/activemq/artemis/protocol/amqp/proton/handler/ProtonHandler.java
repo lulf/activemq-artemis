@@ -359,8 +359,8 @@ public class ProtonHandler extends ProtonInitializable {
                   break;
                case PN_SASL_FAIL:
                   // TODO - log error
-                  dispatchAuthFailed();
                   sasl = null;
+                  dispatchAuthFailed();
                   break;
                case PN_SASL_PASS:
                   // TODO - log success
@@ -378,9 +378,9 @@ public class ProtonHandler extends ProtonInitializable {
                         return true;
                      }
                   };
-                  dispatchAuthSuccess();
-
                   sasl = null;
+
+                  dispatchAuthSuccess();
                   break;
                case PN_SASL_CONF:
                   // do nothing
